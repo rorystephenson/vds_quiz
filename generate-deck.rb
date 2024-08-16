@@ -6,9 +6,9 @@ OUTPUT_FILE = 'vds-quiz.apkg'
 
 def extract(question_with_answer)
   answers = [
-    question_with_answer['answer_1'],
-    question_with_answer['answer_2'],
-    question_with_answer['answer_3'],
+    question_with_answer['answer_1'].capitalize,
+    question_with_answer['answer_2'].capitalize,
+    question_with_answer['answer_3'].capitalize,
   ]
   solution_index = question_with_answer['solution'].to_i - 1
   correct_answer = answers.delete_at solution_index

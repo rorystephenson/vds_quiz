@@ -2,9 +2,14 @@ require 'csv'
 require 'anki_record'
 
 PARAGLIDE_OUTPUT_NAME = "vds-quiz-parapendio"
-DELTAPLANE_OUTPUT_NAME = "vds-quiz-deltaplano"
 PARAGLIDE_OUTPUT_FILE = "#{PARAGLIDE_OUTPUT_NAME}.apkg"
-DELTAPLANE_OUTPUT_FILE = "#{DELTAPLANE_OUTPUT_NAME}.apkg"
+
+DELTAPLANE_QUESTION_IDS = [
+"2147", "7062", "7063", "7064", "7065", "7066", "7067", "7068", "7069", "7070",
+"7071", "7072", "7073", "7074", "7075", "7076", "7077", "7078", "7079", "8011",
+"8012", "8013", "8014", "8015", "8016", "9037", "9038", "9039", "9040", "9041",
+"9042"
+]
 
 def extract(question_with_answer)
   answers = [
@@ -59,22 +64,12 @@ def create_deck(file_name, deck_name, css, question_format, answer_format, quest
 end
 
 File.delete(PARAGLIDE_OUTPUT_FILE) if File.exist?(PARAGLIDE_OUTPUT_FILE)
-File.delete(DELTAPLANE_OUTPUT_FILE) if File.exist?(DELTAPLANE_OUTPUT_FILE)
 
-# Read question/answer CSV
-questions = CSV.open('vds-questions-with-answers.csv', headers: :first_row).map(&:to_h).map{ |q| extract(q) }
-
-# Split to:
-# - paraglider with general questions
-# - deltaplane with general questions
-paraglide_questions = questions.select do |q|
-  question = q[:question].downcase
-  !question.include?("deltaplan") || question.include?("parapend")
-end
-deltaplane_questions = questions.select do |q|
-  question = q[:question].downcase
-  !question.include?("parapend") || question.include?("deltaplan")
-end
+# Read, process and filter questions
+questions = CSV.open('vds-questions-with-answers.csv', headers: :first_row).
+  map(&:to_h).
+  map{ |q| extract(q) }.
+  select { |q| !DELTAPLANE_QUESTION_IDS.include?(q[:id]) }
 
 # Read anki templates
 front_html = IO.read(File.join('anki-templates', 'front.html'))
@@ -87,6 +82,5 @@ question = "<b>{{Id}}.</b> {{Question}}<br><br>"
 question_format = "#{question}#{front_html}\n<script>#{front_js}</script>"
 answer_format = "#{question}#{back_html}\n<script>#{back_js}</script>"
 
-create_deck(PARAGLIDE_OUTPUT_NAME, "VDS Quiz Parapendio", css, question_format, answer_format, paraglide_questions)
-create_deck(DELTAPLANE_OUTPUT_NAME, "VDS Quiz Deltaplano", css, question_format, answer_format, deltaplane_questions)
+create_deck(PARAGLIDE_OUTPUT_NAME, "VDS Quiz Parapendio", css, question_format, answer_format, questions)
 
